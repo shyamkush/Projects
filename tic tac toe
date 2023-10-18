@@ -1,0 +1,726 @@
+package TicTacToe;
+
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+
+public class Game extends Application{
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    public void start(Stage stage)
+    {
+        stage.setTitle("Tic-Tac-Toe");
+        FlowPane root=new FlowPane(Orientation.VERTICAL,100,75);
+        root.setAlignment(Pos.CENTER);
+        Scene scene=new Scene(root,400,500);
+
+        Image icon=new Image("icon.png");
+        stage.getIcons().add(icon);
+
+        Button a1=new Button("Start Game");
+        a1.setPrefHeight(80);
+        a1.setPrefWidth(150);
+        a1.setFont(Font.font(18));
+        a1.setOnAction(new EventHandler<ActionEvent>(){
+            public void handle(ActionEvent event) {
+                Player p=new Player();
+                p.player(stage);
+            }
+        });
+
+        Button a2= new Button("Score");
+        a2.setPrefHeight(80);
+        a2.setPrefWidth(150);
+        a2.setFont(Font.font(18));
+        a2.setOnAction(new EventHandler<ActionEvent>(){
+            public void handle(ActionEvent event) {
+                Score s=new Score();
+                s.showScores(stage);
+            }
+        });
+
+        root.getChildren().addAll(a1,a2);
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.show();
+    }
+}
+
+
+#player
+
+package TicTacToe;
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+
+public class Player {
+    public void player(Stage stage)
+    {
+        GridPane root=new GridPane();
+        root.setAlignment(Pos.CENTER);
+        root.setVgap(10);
+        root.setHgap(10);
+
+        Label l1=new Label("Player1 :");
+        l1.setFont(Font.font(18));
+        TextField tf1=new TextField();
+        root.add(l1, 0, 0);
+        root.add(tf1, 1, 0);
+        
+        Label l2=new Label("Player2 :");
+        l2.setFont(Font.font(18));
+        TextField tf2=new TextField();
+        root.add(l2, 0, 1);
+        root.add(tf2, 1, 1);
+
+        Button b1= new Button("Go Back");
+        b1.setPrefHeight(10);
+        b1.setPrefWidth(70);
+        b1.setFont(Font.font(13));
+        b1.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                Game obj=new Game();
+                obj.start(stage);
+            }
+        });
+
+        Button b2= new Button("Play");
+        b2.setPrefHeight(10);
+        b2.setPrefWidth(70);
+        b2.setFont(Font.font(13));
+        b2.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(tf1.getText().length()>0&&tf2.getText().length()>0)
+                {
+                    TTT t=new TTT(tf1.getText(),tf2.getText());
+                    t.grid(stage);
+                }
+            }
+        });
+
+        root.add(b1, 1, 2);
+        root.add(b2, 2, 2);
+        Scene scene=new Scene(root,400,300);
+        stage.setScene(scene);
+    }
+}
+
+
+
+
+
+
+
+#replay
+
+
+package TicTacToe;
+
+import javafx.stage.Stage;
+
+public class Replay {
+    public void Re(Stage stage, String name1,String name2)
+    {
+        TTT t=new TTT(name1,name2);
+        t.grid(stage);
+    }
+}
+
+
+
+
+#score
+
+package TicTacToe;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+
+public class Score {
+
+    final String driver="com.mysql.cj.jdbc.Driver";
+    final String url="jdbc:mysql://localhost:3306/score";
+    final String user="root";
+    final String password="root123";
+
+    public void addScore(String name1, String name2, int a, int b)
+    {
+        try 
+        {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con=DriverManager.getConnection(url, user, password);
+
+            Statement st1=(Statement)con.createStatement();
+            Statement st2=(Statement)con.createStatement();
+
+            ResultSet rs1=st1.executeQuery("select * from scores where name='"+name1+"'");
+            ResultSet rs2=st2.executeQuery("select * from scores where name='"+name2+"'");
+
+            String str1="insert into scores values('"+name1+"',"+a+","+b+")";
+            String str2="insert into scores values('"+name2+"',"+b+","+a+")";
+            
+            if(!rs1.next())
+            {
+                st1.executeUpdate(str1);
+            }
+            else
+            {
+                String str3="update scores set win="+(rs1.getInt(2)+a)+", lose="+(rs1.getInt(3)+b)+" where name='"+name1+"'";
+                st1.executeUpdate(str3);
+            }
+            if(!rs2.next())
+            {
+                st2.executeUpdate(str2);
+            }
+            else
+            {
+                String str4="update scores set win="+(rs2.getInt(2)+b)+", lose="+(rs2.getInt(3)+a)+" where name='"+name2+"'";
+                st2.executeUpdate(str4);
+            }
+        }
+
+        catch (ClassNotFoundException e) 
+        {
+            e.printStackTrace();
+        }
+
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    public void showScores(Stage stage)
+    {
+        stage.setTitle("Score");
+        VBox root=new VBox(15);
+        root.setAlignment(Pos.TOP_CENTER);
+        
+        Scene scene=new Scene(root,400,525);
+
+        Button reset=new Button("Reset Scores");
+        reset.setPrefHeight(40);
+        reset.setPrefWidth(120);
+        reset.setFont(Font.font(15));
+
+        Button goback=new Button("Go Back");
+        goback.setPrefHeight(30);
+        goback.setPrefWidth(90);
+        goback.setFont(Font.font(16));
+        goback.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent ae) 
+            {
+                Game g=new Game();
+                g.start(stage);                
+            }
+        });
+
+        TableView<ScoreValue> table=new TableView<>();
+
+        TableColumn<ScoreValue, String> nameCol=new TableColumn<>("Name");
+        nameCol.setMinWidth(200);
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<ScoreValue, Integer> winCol=new TableColumn<>("Win");
+        winCol.setMinWidth(100);
+        winCol.setCellValueFactory(new PropertyValueFactory<>("win"));
+
+        TableColumn<ScoreValue, Integer> loseCol=new TableColumn<>("Lose");
+        loseCol.setMinWidth(100);
+        loseCol.setCellValueFactory(new PropertyValueFactory<>("lose"));
+
+        ObservableList<ScoreValue> score=FXCollections.observableArrayList();
+        try 
+        {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con=DriverManager.getConnection(url, user, password);
+            Statement st=(Statement)con.createStatement();
+            Statement st1=(Statement)con.createStatement();
+            
+            reset.setOnAction(new EventHandler<ActionEvent>() {
+                public void handle(ActionEvent ae)
+                {
+                    try 
+                    {
+                        st1.executeUpdate("delete from scores");
+                        showScores(stage);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            ResultSet rs=st.executeQuery("select * from scores");
+            while(rs.next())
+            {
+                score.add(new ScoreValue(rs.getString(1),rs.getInt(2),rs.getInt(3)));
+            }
+        } 
+        catch (ClassNotFoundException e) 
+        {
+            e.printStackTrace();
+        } 
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+        table.setItems(score);
+        table.getColumns().addAll(Arrays.asList(nameCol,winCol,loseCol));
+
+        root.getChildren().addAll(table,reset,goback);
+        stage.setScene(scene);
+        stage.show();
+    }
+}
+
+
+
+#score value
+
+package TicTacToe;
+
+public class ScoreValue {
+    private String name;
+    private int win,lose;
+    public ScoreValue()
+    {
+        name="";
+        win=0;
+        lose=0;
+    }
+    public ScoreValue(String name,int win,int lose) 
+    {
+        this.name=name;
+        this.win=win;
+        this.lose=lose;    
+    }
+    public String getName()
+    {
+        return name;
+    }
+    public void setName(String name)
+    {
+        this.name=name;
+    }
+    public int getWin()
+    {
+        return win;
+    }
+    public void setWin(int win)
+    {
+        this.win=win;
+    }
+    public int getLose()
+    {
+        return lose;
+    }
+    public void setLose(int lose)
+    {
+        this.lose=lose;
+    }
+}
+
+
+#TTT
+
+package TicTacToe;
+
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Line;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+
+public class TTT {
+    
+    int count=0, a[][]=new int[3][3]; 
+    boolean f=false;
+    String name1="",name2="";
+
+    TTT(String name1,String name2)
+    {
+        this.name1=name1;
+        this.name2=name2;
+    }
+
+    void grid(Stage stage)
+    {
+        VBox root=new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        GridPane gridPane=new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        StackPane stackPane=new StackPane();
+
+        Label l=new Label();
+        l.setFont(Font.font(50));
+        l.setText("Player X's Turn");
+        
+        Button b1=new Button();
+        b1.setPrefHeight(100);
+        b1.setPrefWidth(100);
+        b1.setBackground(null);
+        b1.setFont(Font.font(45));
+        b1.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b1.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(0, 0, b1, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b1, 0, 0);
+        
+        Button b2=new Button();
+        b2.setPrefHeight(100);
+        b2.setPrefWidth(100);
+        b2.setBackground(null);
+        b2.setFont(Font.font(45));
+        b2.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b2.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(0, 1, b2, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b2, 1, 0);
+
+        Button b3=new Button();
+        b3.setPrefHeight(100);
+        b3.setPrefWidth(100);
+        b3.setBackground(null);
+        b3.setFont(Font.font(45));
+        b3.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b3.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(0, 2, b3, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b3, 2, 0);
+
+        Button b4=new Button();
+        b4.setPrefHeight(100);
+        b4.setPrefWidth(100);
+        b4.setBackground(null);
+        b4.setFont(Font.font(45));
+        b4.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b4.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(1, 0, b4, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b4, 0, 1);
+
+        Button b5=new Button();
+        b5.setPrefHeight(100);
+        b5.setPrefWidth(100);
+        b5.setBackground(null);
+        b5.setFont(Font.font(45));
+        b5.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b5.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(1, 1, b5, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b5, 1, 1);
+
+        Button b6=new Button();
+        b6.setPrefHeight(100);
+        b6.setPrefWidth(100);
+        b6.setBackground(null);
+        b6.setFont(Font.font(45));
+        b6.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b6.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(1, 2, b6, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b6, 2, 1);
+
+        Button b7=new Button();
+        b7.setPrefHeight(100);
+        b7.setPrefWidth(100);
+        b7.setBackground(null);
+        b7.setFont(Font.font(45));
+        b7.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b7.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(2, 0, b7, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b7, 0, 2);
+
+        Button b8=new Button();
+        b8.setPrefHeight(100);
+        b8.setPrefWidth(100);
+        b8.setBackground(null);
+        b8.setFont(Font.font(45));
+        b8.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b8.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(2, 1, b8, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b8, 1, 2);
+
+        Button b9=new Button();
+        b9.setPrefHeight(100);
+        b9.setPrefWidth(100);
+        b9.setBackground(null);
+        b9.setFont(Font.font(45));
+        b9.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event)
+            {
+                if(b9.getText().length()<=0&&!f)
+                {
+                    ButtonActivity(2, 2, b9, stackPane, l, root);
+                }
+            }
+        });
+        gridPane.add(b9, 2, 2);
+
+        Button go_back=new Button("Go Back");
+        go_back.setPrefHeight(30);
+        go_back.setPrefWidth(90);
+        go_back.setFont(Font.font(16));
+        go_back.setOnAction(new EventHandler<ActionEvent>() {
+            
+            public void handle(ActionEvent event) {
+                Player p=new Player();
+                p.player(stage);
+            }
+        });
+
+        Button go_home=new Button("Go Home");
+        go_home.setPrefHeight(30);
+        go_home.setPrefWidth(90);
+        go_home.setFont(Font.font(16));
+        go_home.setOnAction(new EventHandler<ActionEvent>() {
+            
+            public void handle(ActionEvent event) {
+                Game g=new Game();
+                g.start(stage);
+            }
+        });
+        
+        Button replay=new Button("Replay");
+        replay.setPrefHeight(30);
+        replay.setPrefWidth(90);
+        replay.setFont(Font.font(16));
+        replay.setOnAction(new EventHandler<ActionEvent>() {
+            
+            public void handle(ActionEvent arg0) {
+                Replay r=new Replay();
+                r.Re(stage,name1,name2);
+            }
+        });
+
+        Line l1=new Line(100,0,100,300);
+        l1.setTranslateX(-50);
+        l1.setStrokeWidth(3);
+
+        Line l2=new Line(100,0,100,300);
+        l2.setTranslateX(50);
+        l2.setStrokeWidth(3);
+
+        Line l3=new Line(0,0,300,0);
+        l3.setTranslateY(50);
+        l3.setStrokeWidth(3);
+
+        Line l4=new Line(0,300,300,300);
+        l4.setTranslateY(-50);
+        l4.setStrokeWidth(3);
+
+        stackPane.getChildren().addAll(gridPane,l1,l2,l3,l4);
+        root.getChildren().addAll(l,stackPane,go_home,go_back,replay);
+        Scene scene=new Scene(root,600,600);
+        stage.setScene(scene);
+    }
+
+    public void ButtonActivity(int r,int c,Button b, StackPane stackPane, Label l, VBox root)
+    {
+        count++;
+        a[r][c]=count%2+1;
+        Btext(count%2+1,b);
+        f=check(stackPane,l,root);
+        if(!f)
+            Ltext(count%2+1,l);
+    }
+
+    public void Btext(int c, Button b)
+    {
+        if(c==2)
+        {
+            b.setText("X");
+        }
+        else
+        {
+            b.setText("O");
+        }
+    }
+    public void Ltext(int c, Label l)
+    {
+        if(c==2)
+        {
+            l.setText("Player O's Turn");
+        }
+        else
+        {
+            l.setText("Player X's Turn");
+        }
+    }
+
+    public boolean check(StackPane stackPane,Label l,VBox root)
+    {
+        Line line=new Line();
+        line.setStartX(0);
+        line.setStartY(0);
+        int c=0;
+        if(a[0][0]==a[0][1]&&a[0][1]==a[0][2]&&(a[0][2]==1||a[0][2]==2))
+        {
+            line.setEndX(300);
+            line.setEndY(0);
+            line.setTranslateY(-100);
+            c=a[0][0];
+        }
+        else if(a[1][0]==a[1][1]&&a[1][1]==a[1][2]&&(a[1][2]==1||a[1][2]==2))
+        {
+            line.setEndX(300);
+            line.setEndY(0);
+            c=a[1][0];
+        }
+        else if(a[2][0]==a[2][1]&&a[2][1]==a[2][2]&&(a[2][2]==1||a[2][2]==2))
+        {
+            line.setEndX(300);
+            line.setEndY(0);
+            line.setTranslateY(100);
+            c=a[2][0];
+        }
+        else if(a[0][0]==a[1][0]&&a[1][0]==a[2][0]&&(a[1][0]==1||a[1][0]==2))
+        {
+            line.setEndX(0);
+            line.setEndY(300);
+            line.setTranslateX(-100);
+            c=a[1][0];
+        }
+        else if(a[0][1]==a[1][1]&&a[1][1]==a[2][1]&&(a[1][1]==1||a[1][1]==2))
+        {
+            line.setEndX(0);
+            line.setEndY(300);
+            c=a[1][1];
+        }
+        else if(a[0][2]==a[1][2]&&a[1][2]==a[2][2]&&(a[1][2]==1||a[1][2]==2))
+        {
+            line.setEndX(0);
+            line.setEndY(300);
+            line.setTranslateX(100);
+            c=a[1][2];
+        }
+        else if(a[0][0]==a[1][1]&&a[1][1]==a[2][2]&&(a[1][1]==1||a[1][1]==2))
+        {
+            line.setEndX(0);
+            line.setEndY(375);
+            line.setRotate(-45);
+            c=a[1][1];
+        }
+        else if(a[0][2]==a[1][1]&&a[1][1]==a[2][0]&&(a[1][1]==1||a[1][1]==2))
+        {
+            line.setEndX(0);
+            line.setEndY(375);
+            line.setRotate(45);
+            c=a[1][1];
+        }
+        else
+        {
+            if(count==9)
+            {
+                l.setText("It's a Draw!!!");
+                Score s=new Score();
+                s.addScore(name1, name2, 0, 0);
+                return true;
+            }
+            return false;
+        }
+        if(c==1)
+        {
+            l.setText("Player O won");
+            Score s=new Score();
+            s.addScore(name1, name2, 0, 1);
+        }
+        else
+        {
+            l.setText("Player X won");
+            Score s=new Score();
+            s.addScore(name1, name2, 1, 0);
+        }
+        stackPane.getChildren().add(line);
+        return true;
+    }
+}
